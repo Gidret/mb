@@ -1,6 +1,6 @@
 # mb
 
-bash```
+
 import os
 import random
 
