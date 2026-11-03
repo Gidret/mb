@@ -1,377 +1,188 @@
-
-# import os
-# import random
-
-# class Ship:
-#     def __init__(self, size):
-#         self.size = size
-#         self.coords = []  # Список кортежей (x, y)
-#         self.hits = set()  # Попадания по кораблю
-
-#     def is_sunk(self):
-#         return len(self.hits) == self.size
-
-# class Board:
-#     def __init__(self):
-#         self.size = 10
-#         # '~' - туман войны/пусто, '■' - корабль, 'X' - попадание, '•' - промах
-#         self.grid = [['~' for _ in range(self.size)] for _ in range(self.size)]
-#         self.ships = []
-
-#     def display(self, hide_ships=False):
-#         """Отрисовка поля в консоли."""
-#         print("   " + " ".join(str(i) for i in range(1, 11)))
-#         for y in range(self.size):
-#             row_display = []
-#             for x in range(self.size):
-#                 cell = self.grid[y][x]
-#                 if hide_ships and cell == '■':
-#                     row_display.append('~')
-#                 else:
-#                     row_display.append(cell)
-#             print(f"{y + 1:2} " + " ".join(row_display))
-
-#     def can_place_ship(self, x, y, size, direction):
-#         """Проверка, можно ли поставить корабль (включая зазор в 1 клетку)."""
-#         coords = []
-#         for i in range(size):
-#             nx = x + (i if direction == 'Г' else 0)
-#             ny = y + (i if direction == 'В' else 0)
-
-#             # Проверка выхода за границы поля
-#             if not (0 <= nx < self.size and 0 <= ny < self.size):
-#                 return False
-
-#             # Проверка соседних клеток (корабли не должны касаться)
-#             for dy in (-1, 0, 1):
-#                 for dx in (-1, 0, 1):
-#                     cx, cy = nx + dx, ny + dy
-#                     if 0 <= cx < self.size and 0 <= cy < self.size:
-#                         if self.grid[cy][cx] == '■':
-#                             return False
-#             coords.append((nx, ny))
-#         return coords
-
-#     def place_ship(self, size, x, y, direction):
-#         """Размещение корабля на поле."""
-#         coords = self.can_place_ship(x, y, size, direction)
-#         if not coords:
-#             return False
-
-#         ship = Ship(size)
-#         ship.coords = coords
-#         for cx, cy in coords:
-#             self.grid[cy][cx] = '■'
-#         self.ships.append(ship)
-#         return True
-
-#     def auto_place_ships(self, fleet):
-#         """Случайная расстановка всех кораблей."""
-#         for size in fleet:
-#             placed = False
-#             while not placed:
-#                 x = random.randint(0, self.size - 1)
-#                 y = random.randint(0, self.size - 1)
-#                 direction = random.choice(['Г', 'В'])
-#                 placed = self.place_ship(size, x, y, direction)
-
-#     def receive_shot(self, x, y):
-#         """Обработка выстрела по координатам (x, y)."""
-#         cell = self.grid[y][x]
-#         if cell in ('X', '•'):
-#             return 'repeat'
-#         elif cell == '~':
-#             self.grid[y][x] = '•'
-#             return 'miss'
-#         elif cell == '■':
-#             self.grid[y][x] = 'X'
-#             for ship in self.ships:
-#                 if (x, y) in ship.coords:
-#                     ship.hits.add((x, y))
-#                     if ship.is_sunk():
-#                         self.mark_surrounding(ship)
-#                         return 'killed'
-#                     return 'injured'
-
-#     def mark_surrounding(self, ship):
-#         """Обводит потопленный корабль точками автоматически."""
-#         for sx, sy in ship.coords:
-#             for dy in (-1, 0, 1):
-#                 for dx in (-1, 0, 1):
-#                     cx, cy = sx + dx, sy + dy
-#                     if 0 <= cx < self.size and 0 <= cy < self.size:
-#                         if self.grid[cy][cx] == '~':
-#                             self.grid[cy][cx] = '•'
-
-#     def all_ships_sunk(self):
-#         return all(ship.is_sunk() for ship in self.ships)
-
-# def clear_screen():
-#     """Очистка консоли, чтобы игроки не видели поля друг друга."""
-#     os.system('cls' if os.name == 'nt' else 'clear')
-#     print("\n" * 30)  # Доп. отступ на случай запуска в IDE
-
-# def setup_player_board(player_name):
-#     """Этап расстановки кораблей для одного игрока."""
-#     board = Board()
-#     # Стандартный флот: 1 четырехпалубный, 2 трехпалубных, 3 двухпалубных, 4 однопалубных
-#     fleet = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
-
-#     clear_screen()
-#     print(f"=== {player_name}: Расстановка кораблей ===")
-#     mode = input("Выберите режим расстановки (1 - Вручную, 2 - Автоматически): ").strip()
-
-#     if mode == '2':
-#         board.auto_place_ships(fleet)
-#         board.display(hide_ships=False)
-#         input("\nКорабли расставлены! Нажмите Enter, чтобы продолжить...")
-#         return board
-
-#     for size in fleet:
-#         while True:
-#             clear_screen()
-#             print(f"=== {player_name}: Расстановка кораблей ===")
-#             board.display(hide_ships=False)
-#             print(f"\nСтавим корабль размером в {size} палуб(ы).")
-
-#             try:
-#                 coords_input = input("Введите координаты (X и Y через пробел, от 1 до 10): ").split()
-#                 if len(coords_input) != 2:
-#                     print("Ошибка: нужно ввести два числа через пробел!")
-#                     input("Нажмите Enter...")
-#                     continue
-
-#                 x, y = int(coords_input[0]) - 1, int(coords_input[1]) - 1
-
-#                 if size > 1:
-#                     direction = input("Направление (Г - горизонтально, В - вертикально): ").strip().upper()
-#                     if direction in ('G', 'H'): direction = 'Г'
-#                     if direction == 'V': direction = 'В'
-#                     if direction not in ('Г', 'В'):
-#                         print("Ошибка: введите 'Г' или 'В'!")
-#                         input("Нажмите Enter...")
-#                         continue
-#                 else:
-#                     direction = 'Г'
-
-#                 if board.place_ship(size, x, y, direction):
-#                     break
-#                 else:
-#                     print("Ошибка: здесь нельзя поставить корабль (выход за границы или касание другого корабля)!")
-#                     input("Нажмите Enter...")
-#             except ValueError:
-#                 print("Ошибка: вводите только целые числа!")
-#                 input("Нажмите Enter...")
-
-#     clear_screen()
-#     print(f"=== {player_name}: Все корабли расставлены! ===")
-#     board.display(hide_ships=False)
-#     input("\nНажмите Enter, чтобы передать ход...")
-#     return board
-
-# def play_game():
-#     print("Добро пожаловать в консольный «Морской Бой»!")
-#     input("Нажмите Enter, чтобы начать игру...")
-
-#     board1 = setup_player_board("Игрок 1")
-#     board2 = setup_player_board("Игрок 2")
-
-#     current_player = 1
-
-#     while True:
-#         clear_screen()
-#         if current_player == 1:
-#             player_name = "Игрок 1"
-#             my_board, enemy_board = board1, board2
-#         else:
-#             player_name = "Игрок 2"
-#             my_board, enemy_board = board2, board1
-
-#         input(f"Ходит {player_name}. Нажмите Enter, когда будете готовы...")
-
-#         while True:
-#             clear_screen()
-#             print(f"=== Ход: {player_name} ===")
-#             print("\nВаше поле:")
-#             my_board.display(hide_ships=False)
-#             print("\nПоле противника:")
-#             enemy_board.display(hide_ships=True)
-
-#             try:
-#                 shot_input = input("\nВведите координаты выстрела (X по горизонтали, Y по вертикали через пробел): ").split()
-#                 if len(shot_input) != 2:
-#                     print("Введите ровно две координаты от 1 до 10 через пробел!")
-#                     input("Нажмите Enter...")
-#                     continue
-
-#                 x, y = int(shot_input[0]) - 1, int(shot_input[1]) - 1
-#                 if not (0 <= x < 10 and 0 <= y < 10):
-#                     print("Координаты должны быть в диапазоне от 1 до 10!")
-#                     input("Нажмите Enter...")
-#                     continue
-
-#                 result = enemy_board.receive_shot(x, y)
-
-#                 if result == 'repeat':
-#                     print("Вы уже стреляли в эту клетку! Попробуйте другие координаты.")
-#                     input("Нажмите Enter...")
-#                 elif result == 'miss':
-#                     print("\nМимо! Ход переходит к следующему игроку.")
-#                     input("Нажмите Enter для передачи хода...")
-#                     current_player = 2 if current_player == 1 else 1
-#                     break
-#                 elif result == 'injured':
-#                     print("\nПопадание! Корабль противника ранен. Вы стреляете ещё раз!")
-#                     input("Нажмите Enter для следующего выстрела...")
-#                 elif result == 'killed':
-#                     print("\nУбил! Вражеский корабль полностью уничтожен!")
-#                     if enemy_board.all_ships_sunk():
-#                         clear_screen()
-#                         print("==========================================")
-#                         print(f" ПОЗДРАВЛЯЕМ! {player_name} ПОБЕДИЛ В ИГРЕ!")
-#                         print(" Вся вражеская флотилия уничтожена!")
-#                         print("==========================================")
-#                         return
-#                     input("Нажмите Enter для следующего выстрела...")
-#             except ValueError:
-#                 print("Ошибка: вводите только целые числа!")
-#                 input("Нажмите Enter...")
-
-# if __name__ == '__main__':
-#     play_game()
-
 import os
 import random
 
-class Ship:
-    def __init__(self, size):
-        self.size = size
-        self.coords = []  # Список кортежей (x, y)
-        self.hits = set()  # Попадания по кораблю
+# Создает пустое игровое поле 10 на 10, заполненное туманом войны '~'
+def create_board():
+    board = []
+    for i in range(10):
+        row = []
+        for j in range(10):
+            row.append('~')  # Добавляем пустую клетку в строку
+        board.append(row)   # Добавляем готовую строку в игровое поле
+    return board
 
-    def is_sunk(self):
-        return len(self.hits) == self.size
+# Выводит игровое поле в консоль
+# Параметр hide_ships=True позволяет спрятать живые корабли (чтобы соперник их не видел)
+def display_board(board, hide_ships=False):
+    print("   1 2 3 4 5 6 7 8 9 10") # Верхняя рамка с номерами колонок
+    for y in range(10):
+        row_display = []
+        for x in range(10):
+            cell = board[y][x]
+            # Если включен режим маскировки и в клетке живой корабль -> заменяем на туман
+            if hide_ships and cell == '■':
+                row_display.append('~')
+            else:
+                row_display.append(cell)
+        
+        # Выравниваем числа: перед однозначными (1-9) ставим 2 пробела, перед "10" — один пробел
+        if y + 1 < 10:
+            space = "  "
+        else:
+            space = " "
+        print(f"{y + 1}{space}" + " ".join(row_display))
 
-class Board:
-    def __init__(self):
-        self.size = 10
-        # '~' - туман войны/пусто, '■' - корабль, 'X' - попадание, '•' - промах
-        self.grid = [['~' for _ in range(self.size)] for _ in range(self.size)]
-        self.ships = []
+# Проверяет, можно ли поставить корабль в эти координаты с учетом границ и зазоров в 1 клетку
+def can_place_ship(board, x, y, size, direction):
+    # Пробегаемся по каждой палубе будущего корабля
+    for i in range(size):
+        if direction == 'Г':   # Если горизонтальный — сдвигаем X координату
+            nx = x + i
+            ny = y
+        else:                  # Если вертикальный — сдвигаем Y координату
+            nx = x
+            ny = y + i
 
-    def display(self, hide_ships=False):
-        """Отрисовка поля в консоли. hide_ships=True прячет живые корабли."""
-        print("   " + " ".join(str(i) for i in range(1, 11)))
-        for y in range(self.size):
-            row_display = []
-            for x in range(self.size):
-                cell = self.grid[y][x]
-                if hide_ships and cell == '■':
-                    row_display.append('~')
-                else:
-                    row_display.append(cell)
-            print(f"{y + 1:2} " + " ".join(row_display))
-
-    def can_place_ship(self, x, y, size, direction):
-        """Проверка, можно ли поставить корабль (включая зазор в 1 клетку)."""
-        coords = []
-        for i in range(size):
-            nx = x + (i if direction == 'Г' else 0)
-            ny = y + (i if direction == 'В' else 0)
-
-            if not (0 <= nx < self.size and 0 <= ny < self.size):
-                return False
-
-            for dy in (-1, 0, 1):
-                for dx in (-1, 0, 1):
-                    cx, cy = nx + dx, ny + dy
-                    if 0 <= cx < self.size and 0 <= cy < self.size:
-                        if self.grid[cy][cx] == '■':
-                            return False
-            coords.append((nx, ny))
-        return coords
-
-    def place_ship(self, size, x, y, direction):
-        """Размещение корабля на поле."""
-        coords = self.can_place_ship(x, y, size, direction)
-        if not coords:
+        # Проверка 1: не вылетел ли корабль за границы поля (от 0 до 9)?
+        if not (0 <= nx < 10 and 0 <= ny < 10):
             return False
 
-        ship = Ship(size)
-        ship.coords = coords
-        for cx, cy in coords:
-            self.grid[cy][cx] = '■'
-        self.ships.append(ship)
-        return True
+        # Проверка 2: проверяем саму клетку палубы и все 8 клеток вокруг нее (квадрат 3х3)
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                cx = nx + dx
+                cy = ny + dy
+                # Если соседняя клетка существует на поле и там уже стоит корабль '■'
+                if 0 <= cx < 10 and 0 <= cy < 10:
+                    if board[cy][cx] == '■':
+                        return False # Ставить нельзя, нарушено правило соседства
+    return True # Если все проверки прошли — ставить можно
 
-    def auto_place_ships(self, fleet):
-        """Случайная расстановка всех кораблей."""
-        for size in fleet:
-            placed = False
-            while not placed:
-                x = random.randint(0, self.size - 1)
-                y = random.randint(0, self.size - 1)
-                direction = random.choice(['Г', 'В'])
-                placed = self.place_ship(size, x, y, direction)
+# Пытается поставить корабль на поле
+def place_ship(board, x, y, size, direction):
+    # Сначала проверяем, разрешено ли ставить
+    if not can_place_ship(board, x, y, size, direction):
+        return False # Если нельзя, возвращаем False
+    
+    # Если можно, фактически меняем символы на поле на '■'
+    for i in range(size):
+        if direction == 'Г':
+            board[y][x + i] = '■'
+        else:
+            board[y + i][x] = '■'
+    return True # Корабль успешно выставлен
 
-    def receive_shot(self, x, y):
-        """Обработка выстрела по координатам (x, y)."""
-        cell = self.grid[y][x]
-        if cell in ('X', '•'):
-            return 'repeat'
-        elif cell == '~':
-            self.grid[y][x] = '•'
-            return 'miss'
-        elif cell == '■':
-            self.grid[y][x] = 'X'
-            for ship in self.ships:
-                if (x, y) in ship.coords:
-                    ship.hits.add((x, y))
-                    if ship.is_sunk():
-                        self.mark_surrounding(ship)
-                        return 'killed'
-                    return 'injured'
+# Автоматически расставляет флот случайным образом
+def auto_place_ships(board, fleet):
+    for size in fleet:
+        placed = False
+        while not placed:
+            x = random.randint(0, 9)       # Случайный X от 0 до 9
+            y = random.randint(0, 9)       # Случайный Y от 0 до 9
+            direction = random.choice(['Г', 'В']) # Случайное направление
+            placed = place_ship(board, x, y, size, direction) # Пытаемся поставить
 
-    def mark_surrounding(self, ship):
-        """Обводит потопленный корабль точками автоматически."""
-        for sx, sy in ship.coords:
-            for dy in (-1, 0, 1):
-                for dx in (-1, 0, 1):
-                    cx, cy = sx + dx, sy + dy
-                    if 0 <= cx < self.size and 0 <= cy < self.size:
-                        if self.grid[cy][cx] == '~':
-                            self.grid[cy][cx] = '•'
+# Функция «сканирует» поле вокруг подбитой палубы, чтобы понять, утонул ли корабль полностью
+def check_if_ship_sunk(board, start_x, start_y):
+    ship_cells = [] # Сюда соберем координаты всего корабля целиком
+    
+    # Шагаем влево от места попадания, пока натыкаемся на палубы (раненые или живые)
+    x = start_x
+    while x >= 0 and board[start_y][x] in ('X', '■'):
+        ship_cells.append((x, start_y))
+        x -= 1
+    # Шагаем вправо
+    x = start_x + 1
+    while x < 10 and board[start_y][x] in ('X', '■'):
+        ship_cells.append((x, start_y))
+        x += 1
+        
+    # Шагаем вверх
+    y = start_y
+    while y >= 0 and board[y][start_x] in ('X', '■'):
+        ship_cells.append((start_x, y))
+        y -= 1
+    # Шагаем вниз
+    y = start_y + 1
+    while y < 10 and board[y][start_x] in ('X', '■'):
+        ship_cells.append((start_x, y))
+        y += 1
 
-    def all_ships_sunk(self):
-        return all(ship.is_sunk() for ship in self.ships)
+    # Убираем дубликаты координат с помощью множества и превращаем обратно в список
+    ship_cells = list(set(ship_cells))
 
+    # Если среди найденных клеток корабля осталась хотя бы одна живая '■', корабль еще жив
+    for sx, sy in ship_cells:
+        if board[sy][sx] == '■':
+            return False, [] # Корабль ранен, но не убит
+            
+    return True, ship_cells # Корабль полностью уничтожен!
+
+# Автоматически обводит уничтоженный корабль точками '*', так как там точно нет других кораблей
+def mark_surrounding(board, ship_cells):
+    for sx, sy in ship_cells:
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                cx = sx + dx
+                cy = sy + dy
+                # Если соседняя клетка — это пустая вода '~', ставим туда '*' (промах/занято)
+                if 0 <= cx < 10 and 0 <= cy < 10:
+                    if board[cy][cx] == '~':
+                        board[cy][cx] = '*'
+
+# Принимает выстрел игрока и обрабатывает его результат
+def receive_shot(board, x, y):
+    cell = board[y][x]
+    if cell == 'X' or cell == '*':
+        return 'repeat' # Игрок выстрелил туда, куда уже стрелял ранее
+    elif cell == '~':
+        board[y][x] = '*' # Ставим промах
+        return 'miss'
+    elif cell == '■':
+        board[y][x] = 'X' # Ставим попадание (ранен)
+        # Сразу проверяем, не был ли это последний вздох корабля
+        is_sunk, ship_cells = check_if_ship_sunk(board, x, y)
+        if is_sunk:
+            mark_surrounding(board, ship_cells) # Обводим точками
+            return 'killed' # Корабль убит
+        return 'injured' # Корабль просто ранен
+
+# Проверяет, остались ли на поле вообще живые палубы
+def all_ships_sunk(board):
+    for y in range(10):
+        for x in range(10):
+            if board[y][x] == '■':
+                return False # Нашли хоть одну живую палубу — игра продолжается
+    return True # Живых кораблей нет — поражение
+
+# Очищает экран консоли, перенося текст, чтобы игроки не подглядывали друг за другом
 def clear_screen():
-    """Очистка консоли, чтобы игроки не подглядывали."""
     os.system('cls' if os.name == 'nt' else 'clear')
-    print("\n" * 30)
+    print("" * 30)
 
+# Организует этап расстановки флота для конкретного игрока
 def setup_player_board(player_name):
-    """Этап расстановки кораблей для одного игрока."""
-    board = Board()
-    fleet = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
+    board = create_board()
+    fleet = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1] # Наш стандартный набор кораблей
 
     clear_screen()
     print(f"=== {player_name}: Расстановка кораблей ===")
     mode = input("Выберите режим расстановки (1 - Вручную, 2 - Автоматически): ").strip()
 
     if mode == '2':
-        board.auto_place_ships(fleet)
-        board.display(hide_ships=False)
-        input("\nКорабли расставлены! Передайте управление другу и НАЖМИТЕ ENTER, чтобы очистить экран...")
+        auto_place_ships(board, fleet)
+        display_board(board, hide_ships=False)
+        input("Корабли расставлены! Передайте управление другу и НАЖМИТЕ ENTER...")
         clear_screen()
         return board
 
+    # Ручная расстановка
     for size in fleet:
         while True:
             clear_screen()
             print(f"=== {player_name}: Расстановка кораблей ===")
-            board.display(hide_ships=False)
-            print(f"\nСтавим корабль размером в {size} палуб(ы).")
+            display_board(board, hide_ships=False)
+            print(f"Ставим корабль размером в {size} палуб(ы).")
 
             try:
                 coords_input = input("Введите координаты (X и Y через пробел, от 1 до 10): ").split()
@@ -380,8 +191,11 @@ def setup_player_board(player_name):
                     input("Нажмите Enter...")
                     continue
 
-                x, y = int(coords_input[0]) - 1, int(coords_input[1]) - 1
+                # Вычитаем 1, так как пользователи вводят от 1 до 10, а индексы в Python от 0 до 9
+                x = int(coords_input[0]) - 1
+                y = int(coords_input[1]) - 1
 
+                # Направление нужно запрашивать только для кораблей длиннее 1 клетки
                 if size > 1:
                     direction = input("Направление (Г - горизонтально, В - вертикально): ").strip().upper()
                     if direction in ('G', 'H'): direction = 'Г'
@@ -391,12 +205,13 @@ def setup_player_board(player_name):
                         input("Нажмите Enter...")
                         continue
                 else:
-                    direction = 'Г'
+                    direction = 'Г' # Для одиночной клетки направление не важно
 
-                if board.place_ship(size, x, y, direction):
-                    break
+                # Пытаемся поставить корабль
+                if place_ship(board, x, y, size, direction):
+                    break # Успех! Переходим к следующему кораблю
                 else:
-                    print("Ошибка: здесь нельзя поставить корабль (выход за границы или касание другого корабля)!")
+                    print("Ошибка: сюда нельзя поставить корабль!")
                     input("Нажмите Enter...")
             except ValueError:
                 print("Ошибка: вводите только целые числа!")
@@ -404,82 +219,89 @@ def setup_player_board(player_name):
 
     clear_screen()
     print(f"=== {player_name}: Все корабли расставлены! ===")
-    board.display(hide_ships=False)
-    input("\nПередайте управление другу и НАЖМИТЕ ENTER, чтобы очистить экран...")
+    display_board(board, hide_ships=False)
+    input("Передайте управление другу и НАЖМИТЕ ENTER, чтобы очистить экран...")
     clear_screen()
     return board
 
+# Главная функция управления игрой
 def play_game():
     print("Добро пожаловать в консольный «Морской Бой»!")
     input("Нажмите Enter, чтобы начать игру...")
 
+    # Создаем и заполняем поля для обоих игроков
     board1 = setup_player_board("Игрок 1")
     board2 = setup_player_board("Игрок 2")
 
-    current_player = 1
+    current_player = 1 # Начинает первый игрок
 
     while True:
         clear_screen()
+        # Определяем, кто стреляет, а кто защищается на текущем ходу
         if current_player == 1:
             player_name = "Игрок 1"
-            my_board, enemy_board = board1, board2
+            my_board = board1
+            enemy_board = board2
         else:
             player_name = "Игрок 2"
-            my_board, enemy_board = board2, board1
+            my_board = board2
+            enemy_board = board1
 
-        # Ширма: игра не начнется, пока текущий игрок не подтвердит, что соперник отвернулся
-        input(f"Ходит {player_name}. Убедитесь, что соперник не смотрит на экран, и нажмите Enter...")
+        input(f"Ходит {player_name}. Убедитесь, что соперник не смотрит, и нажмите Enter...")
 
+        # Внутренний цикл хода (пока игрок попадает, он продолжает стрелять)
         while True:
             clear_screen()
             print(f"=== Ход: {player_name} ===")
+        
+            print("Ваше поле (видны только попадания по вам):")
+            display_board(my_board, hide_ships=True) 
             
-            # Изменено: теперь hide_ships=True для обоих полей. Полная секретность!
-            print("\nВаше поле (корабли скрыты ради безопасности, видны только попадания по вам):")
-            my_board.display(hide_ships=True) 
-            
-            print("\nПоле противника:")
-            enemy_board.display(hide_ships=True)
+            print("Поле противника:")
+            display_board(enemy_board, hide_ships=True)
 
             try:
-                shot_input = input("\nВведите координаты выстрела (X по горизонтали, Y по вертикали через пробел): ").split()
+                shot_input = input("Введите координаты выстрела (X и Y через пробел): ").split()
                 if len(shot_input) != 2:
                     print("Введите ровно две координаты от 1 до 10 через пробел!")
                     input("Нажмите Enter...")
                     continue
 
-                x, y = int(shot_input[0]) - 1, int(shot_input[1]) - 1
+                x = int(shot_input[0]) - 1
+                y = int(shot_input[1]) - 1
+                
                 if not (0 <= x < 10 and 0 <= y < 10):
                     print("Координаты должны быть в диапазоне от 1 до 10!")
                     input("Нажмите Enter...")
                     continue
 
-                result = enemy_board.receive_shot(x, y)
+                # Передаем выстрел на доску врага
+                result = receive_shot(enemy_board, x, y)
 
                 if result == 'repeat':
-                    print("Вы уже стреляли в эту клетку! Попробуйте другие координаты.")
+                    print("Вы уже стреляли в эту клетку! Попробуйте снова.")
                     input("Нажмите Enter...")
                 elif result == 'miss':
-                    print("\nМимо! Ход переходит к следующему игроку.")
-                    input("Передайте ход сопернику и нажмите Enter для очистки экрана...")
+                    print("Мимо! Ход переходит к следующему игроку.")
+                    input("Нажмите Enter для передачи хода...")
+                    # Меняем игрока: если был 1, станет 2, и наоборот
                     current_player = 2 if current_player == 1 else 1
-                    break
+                    break # Прерываем цикл текущего хода, ход передан
                 elif result == 'injured':
-                    print("\nПопадание! Корабль противника ранен. Вы стреляете ещё раз!")
-                    input("Нажмите Enter для следующего выстрела...")
+                    print("Ранен! Вы получаете дополнительный ход.")
+                    input("Нажмите Enter...")
                 elif result == 'killed':
-                    print("\nУбил! Вражеский корабль полностью уничтожен!")
-                    if enemy_board.all_ships_sunk():
+                    print("Убит! Корабль полностью потоплен. Вы получаете дополнительный ход.")
+                    # Проверяем, не выиграл ли игрок этим убийством
+                    if all_ships_sunk(enemy_board):
                         clear_screen()
-                        print("==========================================")
-                        print(f" ПОЗДРАВЛЯЕМ! {player_name} ПОБЕДИЛ В ИГРЕ!")
-                        print(" Вся вражеская флотилия уничтожена!")
-                        print("==========================================")
-                        return
-                    input("Нажмите Enter для следующего выстрела...")
+                        print(f"Победа! {player_name} полностью уничтожил флот противника!")
+                        return # Выход из игры
+                    input("Нажмите Enter...")
             except ValueError:
                 print("Ошибка: вводите только целые числа!")
                 input("Нажмите Enter...")
 
-if __name__ == '__main__':
+# Точка входа: запускает игру, только если файл запущен напрямую, а не импортирован
+if __name__ == "__main__":
     play_game()
